@@ -1,0 +1,6 @@
+numpy
+notebook
+pandas
+matplotlib
+gradio
+scikit-learn
