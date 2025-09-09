@@ -7,7 +7,6 @@ import os
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
-# Page configuration
 st.set_page_config(
     page_title="Image Compression using K-Means",
     page_icon="🖼️",
@@ -35,18 +34,18 @@ def compress_image_sklearn(image_array, K=16, max_iters=10, tolerance=1e-4, init
         iterations: number of iterations used
         converged: whether algorithm converged
     """
-    # Handle different image formats
+    
     if len(image_array.shape) == 2:
-        # Grayscale image - convert to RGB
+        
         image_array = np.stack([image_array] * 3, axis=-1)
     elif image_array.shape[2] == 4:
-        # RGBA image - convert to RGB by removing alpha channel
+       
         image_array = image_array[:, :, :3]
     elif image_array.shape[2] == 1:
         # Single channel - convert to RGB
         image_array = np.repeat(image_array, 3, axis=2)
     
-    # Ensure we have RGB format (3 channels)
+    
     if image_array.shape[2] != 3:
         raise ValueError(f"Unsupported image format with {image_array.shape[2]} channels. Expected RGB (3 channels).")
     
@@ -64,44 +63,26 @@ def compress_image_sklearn(image_array, K=16, max_iters=10, tolerance=1e-4, init
         algorithm=algorithm
     )
     
-    # Run K-means clustering
+    
     kmeans.fit(X_img)
     
-    # Get cluster labels and centers
+    
     labels = kmeans.labels_
     centers = kmeans.cluster_centers_
     
-    # Replace each pixel with the color of the closest centroid
+    
     X_recovered = centers[labels]
     
     # Reshape image into proper dimensions
     X_recovered = np.reshape(X_recovered, image_array.shape)
     
-    # Determine if converged
     converged = kmeans.n_iter_ < max_iters
     
     return X_recovered.astype(np.uint8), kmeans.n_iter_, converged
 
 def compress_image(image_array, K=16, max_iters=10, tolerance=1e-4, use_kmeans_plus_plus=True, 
-                  n_init=1, algorithm='auto', progress_callback=None):
-    """
-    Compress an image using scikit-learn's K-means clustering
-    
-    Args:
-        image_array: numpy array of the image
-        K: number of colors to compress to
-        max_iters: maximum number of iterations
-        tolerance: convergence tolerance
-        use_kmeans_plus_plus: whether to use K-means++ initialization
-        n_init: number of initializations
-        algorithm: K-means algorithm
-        progress_callback: optional progress callback
-    
-    Returns:
-        compressed_image: compressed image array
-        iterations: number of iterations used
-        converged: whether algorithm converged
-    """
+                  n_init=1, algorithm='full', progress_callback=None):
+
     # Choose initialization method
     init_method = 'k-means++' if use_kmeans_plus_plus else 'random'
     
@@ -139,8 +120,8 @@ def main():
     st.sidebar.header("Advanced Options")
     n_init = st.sidebar.slider("Number of Initializations", min_value=1, max_value=10, value=1,
                                help="Number of times K-means will be run with different centroid seeds")
-    algorithm = st.sidebar.selectbox("Algorithm", ["auto", "full", "elkan"], index=0,
-                                   help="K-means algorithm to use (auto, full, or elkan)")
+    algorithm = st.sidebar.selectbox("Algorithm", ["full", "elkan"], index=0,
+                                   help="K-means algorithm to use ( full, or elkan)")
     
     # File upload
     uploaded_file = st.file_uploader("Choose an image file", type=['png', 'jpg', 'jpeg'])
