@@ -1,8 +1,0 @@
-make the K-means clustiering model
-
-make a way to get user image as input [what is left: how to make user give input to app.py]
-    change the input into req format[changing every image to .png]
-    jpeg to png [done using pillow]
-    if png do nothing[done]
-
-make frontend
