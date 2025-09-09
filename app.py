@@ -89,6 +89,25 @@ def compress_image(image_array, K=16, max_iters=10, tolerance=1e-4, use_kmeans_p
     # Use scikit-learn implementation
     return compress_image_sklearn(image_array, K, max_iters, tolerance, init_method, n_init, algorithm, progress_callback)
 
+def resize_image_half(image_array):
+    """
+    Resize image to half size while maintaining aspect ratio
+    
+    Args:
+        image_array: numpy array of the image
+    
+    Returns:
+        resized_image_array: resized image array
+    """
+    height, width = image_array.shape[:2]
+    new_height = height // 2
+    new_width = width // 2
+    
+    # Use PIL for high-quality resizing
+    img = Image.fromarray(image_array)
+    resized_img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+    return np.array(resized_img)
+
 def create_download_link(image_array, filename="compressed_image.png"):
     """Create a download link for the compressed image"""
     img = Image.fromarray(image_array)
@@ -120,15 +139,20 @@ def main():
     st.sidebar.header("Advanced Options")
     n_init = st.sidebar.slider("Number of Initializations", min_value=1, max_value=10, value=1,
                                help="Number of times K-means will be run with different centroid seeds")
-    algorithm = st.sidebar.selectbox("Algorithm", ["full", "elkan"], index=0,
-                                   help="K-means algorithm to use ( full, or elkan)")
+    algorithm = st.sidebar.selectbox("Algorithm", ["lloyd", "elkan"], index=0,
+                                   help="K-means algorithm to use (lloyd or elkan)")
+    
+    # Image preprocessing options
+    st.sidebar.header("Image Preprocessing")
+    resize_image = st.sidebar.checkbox("Resize to Half Size", value=True,
+                                     help="Resize image to half size before compression for faster processing")
     
     # File upload
     uploaded_file = st.file_uploader("Choose an image file", type=['png', 'jpg', 'jpeg'])
     
     if uploaded_file is not None:
         try:
-            # Load and display original image
+            
             image = Image.open(uploaded_file)
             
             # Convert to RGB if necessary (handles RGBA, grayscale, etc.)
@@ -137,12 +161,20 @@ def main():
             
             image_array = np.array(image)
             
+            # Resize image if requested
+            original_size = image_array.shape[:2]
+            if resize_image:
+                image_array = resize_image_half(image_array)
+                resized_size = image_array.shape[:2]
+            
             st.subheader("Original Image")
             col1, col2 = st.columns(2)
             
             with col1:
                 st.image(image, caption="Original Image", use_container_width=True)
-                st.write(f"**Original size:** {image_array.shape[0]} x {image_array.shape[1]} pixels")
+                st.write(f"**Original size:** {original_size[0]} x {original_size[1]} pixels")
+                if resize_image:
+                    st.write(f"**Resized for processing:** {resized_size[0]} x {resized_size[1]} pixels")
                 st.write(f"**Image format:** {image.mode} → RGB")
                 st.write(f"**Original colors:** {len(np.unique(image_array.reshape(-1, image_array.shape[2]), axis=0))} unique colors")
             
@@ -156,7 +188,11 @@ def main():
             
             with col2:
                 st.image(compressed_image, caption=f"Compressed Image ({K} colors)", use_container_width=True)
-                st.write(f"**Compressed size:** {compressed_array.shape[0]} x {compressed_array.shape[1]} pixels")
+                if resize_image:
+                    st.write(f"**Compressed size:** {compressed_array.shape[0]} x {compressed_array.shape[1]} pixels (resized)")
+                    st.write(f"**Original size:** {original_size[0]} x {original_size[1]} pixels")
+                else:
+                    st.write(f"**Compressed size:** {compressed_array.shape[0]} x {compressed_array.shape[1]} pixels")
                 st.write(f"**Compressed colors:** {len(np.unique(compressed_array.reshape(-1, compressed_array.shape[2]), axis=0))} unique colors")
             
             # Calculate compression ratio
@@ -232,11 +268,20 @@ def main():
                         
                         image_array = np.array(image)
                         
+                        # Resize image if requested
+                        original_size = image_array.shape[:2]
+                        if resize_image:
+                            image_array = resize_image_half(image_array)
+                            resized_size = image_array.shape[:2]
+                        
                         st.subheader(f"Processing {test_file}")
                         col1, col2 = st.columns(2)
                         
                         with col1:
                             st.image(image, caption="Original Image", use_container_width=True)
+                            st.write(f"**Original size:** {original_size[0]} x {original_size[1]} pixels")
+                            if resize_image:
+                                st.write(f"**Resized for processing:** {resized_size[0]} x {resized_size[1]} pixels")
                         
                         with st.spinner("Compressing image..."):
                             compressed_array, iterations, converged = compress_image(
