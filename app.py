@@ -123,11 +123,11 @@ def main():
     
     # Sidebar for parameters
     st.sidebar.header("Compression Parameters")
-    K = st.sidebar.slider("Number of Colors (K)", min_value=2, max_value=64, value=16, 
+    K = st.sidebar.slider("Number of Colors (K)", min_value=2, max_value=64, value=8, 
                           help="Number of colors to compress the image to. Lower values = more compression")
-    max_iters = st.sidebar.slider("Max Iterations", min_value=1, max_value=50, value=10,
+    max_iters = st.sidebar.slider("Max Iterations", min_value=1, max_value=50, value=5,
                                  help="Maximum number of K-means iterations")
-    tolerance = st.sidebar.slider("Convergence Tolerance", min_value=1e-6, max_value=1e-2, value=1e-4, format="%.0e",
+    tolerance = st.sidebar.slider("Convergence Tolerance", min_value=1e-6, max_value=1e-2, value=1e-3, format="%.0e",
                                  help="Stop early if centroid movement is below this threshold")
     
     # Optimization settings
@@ -139,13 +139,10 @@ def main():
     st.sidebar.header("Advanced Options")
     n_init = st.sidebar.slider("Number of Initializations", min_value=1, max_value=10, value=1,
                                help="Number of times K-means will be run with different centroid seeds")
-    algorithm = st.sidebar.selectbox("Algorithm", ["lloyd", "elkan"], index=0,
-                                   help="K-means algorithm to use (lloyd or elkan)")
     
-    # Image preprocessing options
-    st.sidebar.header("Image Preprocessing")
-    resize_image = st.sidebar.checkbox("Resize to Half Size", value=True,
-                                     help="Resize image to half size before compression for faster processing")
+    # Fixed settings for speed optimization
+    algorithm = "elkan"  # Always use elkan for faster convergence
+    resize_image = True  # Always resize to half size for faster processing
     
     # File upload
     uploaded_file = st.file_uploader("Choose an image file", type=['png', 'jpg', 'jpeg'])
